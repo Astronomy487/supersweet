@@ -15,29 +15,30 @@ SupersweetAudioProcessorEditor::SupersweetAudioProcessorEditor (SupersweetAudioP
 {
 	auto& params = processorRef.parameters;
 
-	addAndMakeVisible(oct1VolSlider);
-	addAndMakeVisible(oct2VolSlider);
-	addAndMakeVisible(oct3VolSlider);
-	addAndMakeVisible(oct1SpreadSlider);
-	addAndMakeVisible(oct2SpreadSlider);
-	addAndMakeVisible(oct3SpreadSlider);
-
-	oct1VolAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(params, "oct1Vol", oct1VolSlider);
-	oct2VolAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(params, "oct2Vol", oct2VolSlider);
-	oct3VolAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(params, "oct3Vol", oct3VolSlider);
-	oct1SpreadAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(params, "oct1Spread", oct1SpreadSlider);
-	oct2SpreadAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(params, "oct2Spread", oct2SpreadSlider);
-	oct3SpreadAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(params, "oct3Spread", oct3SpreadSlider);
-
-	for (auto* s : { &oct1VolSlider, &oct2VolSlider, &oct3VolSlider,
-					 &oct1SpreadSlider, &oct2SpreadSlider, &oct3SpreadSlider })
+	for (size_t i = 0; i < std::size(paramList); ++i)
 	{
-		s->setSliderStyle(juce::Slider::LinearBar);
-		s->setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+		auto& slider = sliders[i];
+		auto& label  = labels[i];
+
+		addAndMakeVisible(slider);
+		addAndMakeVisible(label);
+
+		slider.setSliderStyle(juce::Slider::LinearBar);
+		slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+
+		label.setText(paramList[i].name, juce::dontSendNotification);
+		label.setJustificationType(juce::Justification::centredLeft);
+
+		attachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+			params,
+			paramList[i].id,
+			slider
+		);
 	}
 
-	setSize (487, 301);
+	setSize(700, 300);
 }
+
 
 
 SupersweetAudioProcessorEditor::~SupersweetAudioProcessorEditor()
@@ -58,17 +59,24 @@ void SupersweetAudioProcessorEditor::paint (juce::Graphics& g)
 void SupersweetAudioProcessorEditor::resized()
 {
 	auto area = getLocalBounds().reduced(20);
-	auto rowHeight = 80;
+	auto rowHeight = 40;
+	int sliderIndex = 0;
 
-	auto row1 = area.removeFromTop(rowHeight);
-	oct1VolSlider.setBounds(row1.removeFromLeft(150));
-	oct1SpreadSlider.setBounds(row1.removeFromLeft(150));
+	for (int row = 0; true; ++row)
+	{
+		auto rowArea = area.removeFromTop(rowHeight);
 
-	auto row2 = area.removeFromTop(rowHeight);
-	oct2VolSlider.setBounds(row2.removeFromLeft(150));
-	oct2SpreadSlider.setBounds(row2.removeFromLeft(150));
+		for (int col = 0; col < 3 && sliderIndex < std::size(paramList); ++col)
+		{
+			auto cell = rowArea.removeFromLeft(200);
 
-	auto row3 = area.removeFromTop(rowHeight);
-	oct3VolSlider.setBounds(row3.removeFromLeft(150));
-	oct3SpreadSlider.setBounds(row3.removeFromLeft(150));
+			// Label on the left
+			labels[sliderIndex].setBounds(cell.removeFromLeft(90));
+
+			// Slider on the right
+			sliders[sliderIndex].setBounds(cell);
+
+			sliderIndex++;
+		}
+	}
 }

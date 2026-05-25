@@ -8,6 +8,25 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "SupersawSound.h"
+#include "SupersawVoice.h"
+
+juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
+{
+	juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+	for (const auto& p : paramList)
+	{
+		layout.add(std::make_unique<juce::AudioParameterFloat>(
+			p.id, p.name,
+			juce::NormalisableRange<float>(0.0f, 1.0f),
+			p.defaultValue
+		));
+	}
+
+	return layout;
+}
+
 
 //==============================================================================
 SupersweetAudioProcessor::SupersweetAudioProcessor()
@@ -20,17 +39,7 @@ SupersweetAudioProcessor::SupersweetAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        )
-    , parameters(*this, nullptr,
-        "PARAMS",
-        {
-            std::make_unique<juce::AudioParameterFloat>("oct1Vol", "Octave 1 Volume", 0.0f, 1.0f, 1.0f),
-            std::make_unique<juce::AudioParameterFloat>("oct2Vol", "Octave 2 Volume", 0.0f, 1.0f, 0.75f),
-            std::make_unique<juce::AudioParameterFloat>("oct3Vol", "Octave 3 Volume", 0.0f, 1.0f, 0.5f),
-
-            std::make_unique<juce::AudioParameterFloat>("oct1Spread", "Octave 1 Spread", 0.0f, 1.0f, 0.3f),
-            std::make_unique<juce::AudioParameterFloat>("oct2Spread", "Octave 2 Spread", 0.0f, 1.0f, 0.4f),
-            std::make_unique<juce::AudioParameterFloat>("oct3Spread", "Octave 3 Spread", 0.0f, 1.0f, 0.5f)
-        })
+    , parameters(*this, nullptr, "PARAMS", createParameterLayout())
 #else
     : parameters(*this, nullptr, "PARAMS", { ... })
 #endif
@@ -46,7 +55,6 @@ SupersweetAudioProcessor::SupersweetAudioProcessor()
     synth.clearSounds();
     synth.addSound(new SupersawSound());
 }
-
 
 SupersweetAudioProcessor::~SupersweetAudioProcessor()
 {
@@ -114,12 +122,17 @@ void SupersweetAudioProcessor::changeProgramName (int index, const juce::String&
 {
 }
 
-juce::Random SawOsc::rng;
-//==============================================================================
 void SupersweetAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
 	synth.setCurrentPlaybackSampleRate(sampleRate);
+
+	for (int i = 0; i < synth.getNumVoices(); ++i)
+	{
+		if (auto* v = dynamic_cast<SupersawVoice*>(synth.getVoice(i)))
+			v->prepare(sampleRate, samplesPerBlock);
+	}
 }
+
 
 void SupersweetAudioProcessor::releaseResources()
 {
@@ -156,32 +169,6 @@ bool SupersweetAudioProcessor::isBusesLayoutSupported (const BusesLayout& layout
 void SupersweetAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
-    }
-	// ^^ TODO check do i actually need any of this ? lol
-	
 	
 	buffer.clear();
 	synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());

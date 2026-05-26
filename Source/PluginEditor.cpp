@@ -9,7 +9,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-//==============================================================================
 SupersweetAudioProcessorEditor::SupersweetAudioProcessorEditor (SupersweetAudioProcessor& p)
 	: AudioProcessorEditor (&p), processorRef (p)
 {
@@ -25,9 +24,12 @@ SupersweetAudioProcessorEditor::SupersweetAudioProcessorEditor (SupersweetAudioP
 
 		slider.setSliderStyle(juce::Slider::LinearBar);
 		slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+		slider.setColour(juce::Slider::trackColourId, juce::Colour::fromString("ffddff00"));
+		slider.setColour(juce::Slider::thumbColourId, juce::Colour::fromString("ffddff00"));
 
 		label.setText(paramList[i].name, juce::dontSendNotification);
 		label.setJustificationType(juce::Justification::centredLeft);
+		label.setColour(juce::Label::textColourId, juce::Colour::fromString("ffddff00"));
 
 		attachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
 			params,
@@ -36,8 +38,9 @@ SupersweetAudioProcessorEditor::SupersweetAudioProcessorEditor (SupersweetAudioP
 		);
 	}
 
-	setSize(700, 300);
+	setSize(700, 400);
 }
+
 
 
 
@@ -48,35 +51,44 @@ SupersweetAudioProcessorEditor::~SupersweetAudioProcessorEditor()
 //==============================================================================
 void SupersweetAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    /* g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    g.setColour (juce::Colours::white);
-    g.setFont (juce::FontOptions (15.0f));
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1); */
+	// Dark background
+	g.fillAll(juce::Colour::fromRGB(10, 10, 10));
 }
+
 
 void SupersweetAudioProcessorEditor::resized()
 {
 	auto area = getLocalBounds().reduced(20);
-	auto rowHeight = 40;
-	int sliderIndex = 0;
 
-	for (int row = 0; true; ++row)
+	const int rows = 5;
+	const int cols = 3;
+
+	const int cellWidth  = area.getWidth()  / cols;
+	const int cellHeight = area.getHeight() / rows;
+
+	int index = 0;
+
+	for (int row = 0; row < rows; ++row)
 	{
-		auto rowArea = area.removeFromTop(rowHeight);
-
-		for (int col = 0; col < 3 && sliderIndex < std::size(paramList); ++col)
+		for (int col = 0; col < cols; ++col)
 		{
-			auto cell = rowArea.removeFromLeft(200);
+			if (index >= std::size(paramList))
+				return;
 
-			// Label on the left
-			labels[sliderIndex].setBounds(cell.removeFromLeft(90));
+			// Compute the cell for this parameter
+			auto cell = area.withTrimmedTop(row * cellHeight)
+							.withTrimmedLeft(col * cellWidth)
+							.removeFromTop(cellHeight)
+							.removeFromLeft(cellWidth)
+							.reduced(10); // padding inside each cell
 
-			// Slider on the right
-			sliders[sliderIndex].setBounds(cell);
+			// Label at top
+			labels[index].setBounds(cell.removeFromTop(20));
 
-			sliderIndex++;
+			// Slider fills the rest
+			sliders[index].setBounds(cell);
+
+			++index;
 		}
 	}
 }

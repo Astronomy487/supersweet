@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "SupersawSound.h"
@@ -14,21 +6,18 @@
 juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 {
 	juce::AudioProcessorValueTreeState::ParameterLayout layout;
-
 	for (const auto& p : paramList)
 	{
 		layout.add(std::make_unique<juce::AudioParameterFloat>(
-			p.id, p.name,
-			juce::NormalisableRange<float>(0.0f, 1.0f),
+			p.id,
+			p.name,
+			juce::NormalisableRange<float>(p.minValue, p.maxValue),
 			p.defaultValue
 		));
 	}
-
 	return layout;
 }
 
-
-//==============================================================================
 SupersweetAudioProcessor::SupersweetAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
     : AudioProcessor (BusesProperties()

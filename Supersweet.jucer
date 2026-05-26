@@ -6,6 +6,7 @@
               companyWebsite="astronomy487.com" pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn">
   <MAINGROUP id="IhHHP9" name="Supersweet">
     <GROUP id="{834EB2AA-CDFB-9519-C0FB-9314D6CE1F2E}" name="Source">
+      <FILE id="BxQbRY" name="Parameters.h" compile="0" resource="0" file="Source/Parameters.h"/>
       <FILE id="Eouoo9" name="SawOsc.h" compile="0" resource="0" file="Source/SawOsc.h"/>
       <FILE id="Uf4sqt" name="SupersawSound.h" compile="0" resource="0" file="Source/SupersawSound.h"/>
       <FILE id="nz8G8O" name="SupersawVoice.h" compile="0" resource="0" file="Source/SupersawVoice.h"/>
